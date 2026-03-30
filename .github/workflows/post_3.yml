@@ -20,7 +20,7 @@ jobs:
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           NOTION_TOKEN: ${{ secrets.NOTION_API_KEY }}
-          NOTION_POST_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID_3 }}
+          NOTION_DATABASE_ID_3: ${{ secrets.NOTION_DATABASE_ID_3 }}
         run: |
           pip install requests
           python post_3.py
