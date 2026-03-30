@@ -3,9 +3,9 @@ name: Auto Post to Threads
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 9 * * *'   # 台灣時間 17:00
-    - cron: '0 12 * * *'  # 台灣時間 20:00
-    - cron: '0 14 * * *'  # 台灣時間 22:00
+    - cron: '0 9 * * *'
+    - cron: '0 12 * * *'
+    - cron: '0 14 * * *'
 
 jobs:
   post:
@@ -20,8 +20,8 @@ jobs:
         with:
           python-version: '3.11'
 
-       - name: Install dependencies
-     run: |
+      - name: Install dependencies
+        run: |
           pip install --upgrade pip
           pip install google-generativeai notion-client requests
 
