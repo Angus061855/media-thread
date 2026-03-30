@@ -21,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests google-genai
+        run: pip install -r requirements.txt
 
       - name: Run auto post script
         env:
