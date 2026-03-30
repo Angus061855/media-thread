@@ -15,7 +15,7 @@ POST_MODE                = os.environ.get("POST_MODE", "auto")
 
 # ── Gemini 設定 ───────────────────────────────────────
 client = genai.Client(api_key=GEMINI_API_KEY)
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 NOTION_HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
