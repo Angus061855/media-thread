@@ -1,0 +1,30 @@
+name: Auto Post _2 (給主題自動發)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'   # 台灣 17:00
+    - cron: '0 12 * * *'  # 台灣 20:00
+    - cron: '0 14 * * *'  # 台灣 22:00
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run post_2
+        env:
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_PENDING_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID_2 }}
+        run: |
+          pip uninstall google-generativeai -y || true
+          pip install google-genai requests
+          python post_2.py
+```
