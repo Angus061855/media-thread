@@ -29,5 +29,6 @@ jobs:
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
           NOTION_PENDING_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID_2 }}
         run: |
+          pip uninstall google-generativeai -y || true
           pip install google-genai notion-client requests
           python test.py
