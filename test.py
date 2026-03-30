@@ -15,7 +15,7 @@ POST_MODE                = os.environ.get("POST_MODE", "auto")
 
 # ── Gemini 設定 ───────────────────────────────────────
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 NOTION_HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
