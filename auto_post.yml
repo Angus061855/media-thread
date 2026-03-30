@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install "google-generativeai==0.5.4" notion-client requests
+          pip install google-generativeai notion-client requests
 
       - name: Run auto post script
         env:
