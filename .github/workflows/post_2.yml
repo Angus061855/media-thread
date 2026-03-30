@@ -22,7 +22,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NOTION_TOKEN: ${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          NOTION_PENDING_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID_2 }}
+          NOTION_DATABASE_ID_2: ${{ secrets.NOTION_DATABASE_ID_2 }}
         run: |
           pip uninstall google-generativeai -y || true
           pip install google-genai requests
