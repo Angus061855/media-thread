@@ -1,6 +1,6 @@
 import os
 import requests
-import google.generativeai as genai
+from google import genai
 from datetime import datetime
 import time
 
@@ -14,8 +14,8 @@ NOTION_PENDING_DB_ID     = os.environ["NOTION_PENDING_DATABASE_ID"]
 POST_MODE                = os.environ.get("POST_MODE", "auto")
 
 # ── Gemini 設定 ───────────────────────────────────────
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+client = genai.Client(api_key=GEMINI_API_KEY)
+GEMINI_MODEL = "gemini-2.0-flash"
 
 NOTION_HEADERS = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
@@ -50,7 +50,10 @@ def generate_post(topic: str) -> list[str]:
 
 （以此類推到 §7）
 """
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt
+    )
     raw = response.text.strip()
     segments = []
     parts = raw.split("§")
@@ -214,7 +217,10 @@ def main():
     else:
         print("🤖 自動模式，Gemini 自由發揮")
         topic_prompt = "請給我一個適合 Threads 的貼文主題，只需要主題名稱，不需要其他說明。"
-        topic_res = model.generate_content(topic_prompt)
+        topic_res = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=topic_prompt
+        )
         topic = topic_res.text.strip()
         print(f"💡 自動主題：{topic}")
         segments = generate_post(topic)
