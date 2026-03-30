@@ -1,5 +1,3 @@
-name: Auto Post _2 (給主題自動發)
-
 on:
   workflow_dispatch:
   schedule:
