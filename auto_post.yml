@@ -30,4 +30,6 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_API_KEY_2: ${{ secrets.NOTION_API___KEY }}
+          NOTION_DATABASE_ID_2: ${{ secrets.NOTION_DATABASE___ID }}
         run: python test.py
