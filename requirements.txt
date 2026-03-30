@@ -1,2 +1,3 @@
-requests
-google-generativeai
+git add requirements.txt
+git commit -m "fix: add google-generativeai to requirements"
+git push
