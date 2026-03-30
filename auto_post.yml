@@ -1,0 +1,33 @@
+name: Auto Post to Threads
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'   # 台灣時間 17:00
+    - cron: '0 12 * * *'  # 台灣時間 20:00
+    - cron: '0 14 * * *'  # 台灣時間 22:00
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests google-genai
+
+      - name: Run auto post script
+        env:
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        run: python auto_post.py
