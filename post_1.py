@@ -189,7 +189,7 @@ def post_to_threads(post_text):
             f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads_publish",
             data={"creation_id": creation_id, "access_token": THREADS_TOKEN}
         ).json()
-                published_id = pub_res.get("id", "")
+        published_id = pub_res.get("id", "")
         if i == 0:
             first_published_id = published_id
         print(f"第 {i+1} 則結果：", pub_res)
