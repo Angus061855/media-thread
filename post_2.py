@@ -65,6 +65,11 @@ def get_pending_topics():
     }
     payload = {"filter": {"property": "狀態", "status": {"equals": "待發"}}}
     res = requests.post(url, headers=headers, json=payload).json()
+
+    # 加這兩行
+    print("Notion API 回傳：", res)
+    print("找到筆數：", len(res.get("results", [])))
+    
     return res.get("results", [])
 
 def update_status(page_id, status="已發"):
