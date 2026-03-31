@@ -9,40 +9,85 @@ NOTION_POST_DB_ID  = os.environ["NOTION_DATABASE_ID_3"]
 THREADS_USER_ID    = os.environ["THREADS_USER_ID"]
 THREADS_TOKEN      = os.environ["IG_ACCESS_TOKEN"]
 
+NOTION_HEADERS = {
+    "Authorization": f"Bearer {NOTION_TOKEN}",
+    "Notion-Version": "2022-06-28",
+    "Content-Type": "application/json",
+}
+
+# ── 只撈「待發」狀態的頁面 ────────────────────────────
 def get_pending_posts():
     url = f"https://api.notion.com/v1/databases/{NOTION_POST_DB_ID}/query"
-    headers = {
-        "Authorization": f"Bearer {NOTION_TOKEN}",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
+    payload = {
+        "filter": {
+            "property": "狀態",
+            "status": {
+                "equals": "待發"
+            }
+        }
     }
-    payload = {}  # ← 不加 filter，撈全部
-    res = requests.post(url, headers=headers, json=payload).json()
+    res = requests.post(url, headers=NOTION_HEADERS, json=payload).json()
 
-    # 印出原始狀態資料
-    if res.get("results"):
-        page = res["results"][0]
+    results = res.get("results", [])
+    print(f"撈到待發筆數：{len(results)}")
+
+    if results:
+        page = results[0]
         print("狀態欄位原始資料：", page["properties"].get("狀態"))
 
-    return res.get("results", [])
+    return results
 
+# ── 讀取內容：先試 rich_text 欄位，空的話改讀頁面 body ──
 def get_content_from_property(page):
+    # 方法一：讀 rich_text 欄位
     rich_text = page["properties"].get("內容", {}).get("rich_text", [])
-    return "".join([t["plain_text"] for t in rich_text])
+    content = "".join([t["plain_text"] for t in rich_text])
 
-def update_status(page_id, status="已發"):
-    url = f"https://api.notion.com/v1/pages/{page_id}"
+    if content.strip():
+        print(f"✅ 從 rich_text 欄位讀到內容，長度：{len(content)}")
+        return content
+
+    # 方法二：rich_text 是空的，改讀頁面 body blocks
+    print("⚠️  rich_text 欄位為空，改讀頁面 body blocks...")
+    return get_content_from_blocks(page["id"])
+
+# ── 讀取頁面 body blocks ───────────────────────────────
+def get_content_from_blocks(page_id):
+    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
     headers = {
         "Authorization": f"Bearer {NOTION_TOKEN}",
         "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
     }
-    requests.patch(url, headers=headers, json={"properties": {"狀態": {"status": {"name": status}}}})
+    res = requests.get(url, headers=headers).json()
 
+    texts = []
+    for block in res.get("results", []):
+        block_type = block.get("type")
+        rich_text = block.get(block_type, {}).get("rich_text", [])
+        line = "".join([t["plain_text"] for t in rich_text])
+        if line:
+            texts.append(line)
+
+    content = "\n".join(texts)
+    print(f"✅ 從 blocks 讀到內容，長度：{len(content)}")
+    return content
+
+# ── 更新 Notion 狀態 ───────────────────────────────────
+def update_status(page_id, status="已發"):
+    url = f"https://api.notion.com/v1/pages/{page_id}"
+    requests.patch(
+        url,
+        headers=NOTION_HEADERS,
+        json={"properties": {"狀態": {"status": {"name": status}}}}
+    )
+
+# ── 發文到 Threads ─────────────────────────────────────
 def post_to_threads(content):
     posts = re.split(r'§\d+', content)
     posts = [p.strip() for p in posts if p.strip()]
     last_published_id = ""
+
+    print(f"📝 共分成 {len(posts)} 則發文")
 
     for i, text in enumerate(posts):
         text = text.replace("\\n", "\n")
@@ -69,8 +114,10 @@ def post_to_threads(content):
         print(f"第 {i+1} 則結果：", pub_res)
         time.sleep(3)
 
+# ── 主程式 ─────────────────────────────────────────────
 if __name__ == "__main__":
     print("=== _3 段落直接發模式 ===")
+
     posts = get_pending_posts()
     if not posts:
         print("沒有待發內容，結束。")
@@ -80,6 +127,7 @@ if __name__ == "__main__":
     page_id = page["id"]
 
     content = get_content_from_property(page)
+    print(f"讀到的內容預覽：{repr(content[:100])}")  # 只印前100字
 
     if not content.strip():
         print("內容為空，結束。")
