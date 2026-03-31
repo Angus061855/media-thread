@@ -175,7 +175,7 @@ def post_to_threads(post_text):
         print(f"🚀 建立第 {i+1} 則 container...")
         create_url = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads"
         data = {"media_type": "TEXT", "text": text, "access_token": THREADS_TOKEN}
-        if last_published_id:
+        if first_published_id:
             ddata["reply_to_id"] = first_published_id
 
         res = requests.post(create_url, data=data).json()
