@@ -9,8 +9,6 @@ NOTION_PENDING_DB_ID = os.environ["NOTION_DATABASE_ID_2"]
 GEMINI_API_KEY       = os.environ["GEMINI_API_KEY"]
 THREADS_USER_ID      = os.environ["THREADS_USER_ID"]
 THREADS_TOKEN        = os.environ["IG_ACCESS_TOKEN"]
-TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
 # ── Telegram 通知 ─────────────────────────────────────
 def send_telegram(message):
