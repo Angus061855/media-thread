@@ -178,7 +178,7 @@ def generate_post(custom_topic):
 
 輸出格式：第一行輸出「主題：{custom_topic}」，空一行後開始輸出貼文內容。
 """
-    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+    response = client.models.generate_content(model="gemma-4-31b-it", contents=prompt)
     return response.text.strip()
 
 def post_to_threads(post_text):
