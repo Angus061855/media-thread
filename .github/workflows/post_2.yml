@@ -3,8 +3,8 @@ name: Auto Post _2 (給主題自動發)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 12 * * *'  # 台灣 20:00
-    - cron: '0 14 * * *'  # 台灣 22:00
+    - cron: '0 11 * * *'  # 台灣 19:00
+    - cron: '0 13 * * *'  # 台灣 21:00
 
 jobs:
   post:
