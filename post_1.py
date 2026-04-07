@@ -145,7 +145,7 @@ def generate_post(used_topics):
 4. 禁止 AI 感用語：他笑著搖搖頭、我愣住了、他苦笑著說、頓了頓、深吸一口氣、若有所思、眼神黯淡下來
 5. 禁止句型：「不是⋯而是⋯」「更扯的是」「意味著」「在此情境下」「我們可以觀察到」
 6. 禁止出現謾罵「店家」「酒店」等字眼，所有問題來源只能是「黑心經紀」或「經紀人」
-7. 禁止出現「姐妹們」「姊妹們」類似這種很不專業的詞語
+7. 禁止出現「姐妹們」「姊妹們」「妹啊」類似這種很不專業的詞語
 8. 如果講到比較艱深的術語，例如「壓檔」＝壓薪水 「節薪」＝10分鐘的薪水 需要簡單解釋
 
 【行業術語對照表】
@@ -218,8 +218,8 @@ def post_to_threads(post_text):
 
     for i, text in enumerate(posts):
         text = text.replace("\\n", "\n")
-        while len(text.encode('utf-8')) > 1500:
-            text = text[:-1]
+        while len(text.encode('utf-8')) > 500:
+            text = text[:500]
 
         print(f"🚀 建立第 {i+1} 則 container...")
         create_url = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads"
