@@ -214,8 +214,8 @@ def post_to_threads(post_text):
 
     for i, text in enumerate(posts):
         text = text.replace("\\n", "\n")
-        while len(text.encode('utf-8')) > 1500:
-            text = text[:-1]
+        while len(text.encode('utf-8')) > 500:
+            text = text[:500]
 
         print(f"🚀 建立第 {i+1} 則 container...")
         create_url = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads"
