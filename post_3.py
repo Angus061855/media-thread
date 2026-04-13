@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import random
 import requests
 
 # ── 環境變數 ──────────────────────────────────────────
@@ -25,17 +26,14 @@ def send_telegram(message):
         timeout=30
     )
 
-# ── 撈待發，依建立時間排序 ────────────────────────────
+# ── 撈所有待發 ────────────────────────────────────────
 def get_pending_posts():
     url = f"https://api.notion.com/v1/databases/{NOTION_POST_DB_ID}/query"
     payload = {
         "filter": {
             "property": "狀態",
             "status": {"equals": "待發"}
-        },
-        "sorts": [
-            {"timestamp": "created_time", "direction": "ascending"}
-        ]
+        }
     }
     res = requests.post(url, headers=NOTION_HEADERS, json=payload, timeout=30)
     print("HTTP 狀態碼：", res.status_code)
@@ -131,21 +129,20 @@ if __name__ == "__main__":
         print("沒有待發內容，結束。")
         exit(0)
 
-    # 找第一筆有內容的
-    target_page = None
-    target_content = ""
+    # 過濾出有內容的筆，再隨機挑一筆
+    valid_posts = []
     for page in posts:
         content = get_content_from_property(page)
         if content.strip():
-            target_page = page
-            target_content = content
-            break
+            valid_posts.append((page, content))
 
-    if not target_page:
+    if not valid_posts:
         print("所有待發筆內容都是空的，結束。")
         exit(0)
 
+    target_page, target_content = random.choice(valid_posts)
     page_id = target_page["id"]
+    print(f"🎲 隨機選中第幾筆（共 {len(valid_posts)} 筆有內容）")
     print(f"讀到的內容預覽：{repr(target_content[:200])}")
 
     try:
