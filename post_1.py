@@ -198,7 +198,7 @@ def generate_post(used_topics):
             print(f"🤖 第 {attempt+1} 次呼叫 Gemini...")
             client = genai.Client(
                 api_key=GEMINI_API_KEY,
-                http_options={"timeout": 300}
+                http_options={"timeout": 300000}
             )
             response = client.models.generate_content(
                 model="gemma-4-31b-it",
