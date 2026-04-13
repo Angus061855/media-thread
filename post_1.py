@@ -90,10 +90,6 @@ def get_used_topics():
     return used
 
 def generate_post(used_topics):
-    client = genai.Client(
-        api_key=GEMINI_API_KEY,
-        http_options={"timeout": 120}
-    )
     used_str = "\n".join(f"- {t}" for t in used_topics) if used_topics else "（目前沒有已用主題）"
 
     prompt = f"""
@@ -196,11 +192,26 @@ def generate_post(used_topics):
 
 輸出格式：第一行輸出「主題：[主題內容]」，空一行後開始輸出貼文內容。
 """
-    response = client.models.generate_content(
-        model="gemma-4-31b-it",
-        contents=prompt
-    )
-    return response.text.strip()
+
+    for attempt in range(3):
+        try:
+            print(f"🤖 第 {attempt+1} 次呼叫 Gemini...")
+            client = genai.Client(
+                api_key=GEMINI_API_KEY,
+                http_options={"timeout": 300}
+            )
+            response = client.models.generate_content(
+                model="gemma-4-31b-it",
+                contents=prompt
+            )
+            return response.text.strip()
+        except Exception as e:
+            print(f"第 {attempt+1} 次失敗：{e}")
+            if attempt < 2:
+                print("等待 30 秒後重試...")
+                time.sleep(30)
+            else:
+                raise
 
 def extract_topic(post_text):
     for line in post_text.strip().split("\n"):
