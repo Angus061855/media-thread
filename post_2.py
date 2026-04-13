@@ -66,6 +66,10 @@ EXAMPLE_POSTS = """
 """
 
 def get_pending_topics():
+    print("開始呼叫 Notion API...")
+    print("TOKEN 前10碼：", NOTION_TOKEN_2[:10])
+    print("DB ID 前10碼：", NOTION_PENDING_DB_ID[:10])
+    
     url = f"https://api.notion.com/v1/databases/{NOTION_PENDING_DB_ID}/query"
     headers = {
         "Authorization": f"Bearer {NOTION_TOKEN_2}",
@@ -73,12 +77,15 @@ def get_pending_topics():
         "Content-Type": "application/json",
     }
     payload = {"filter": {"property": "狀態", "status": {"equals": "待發"}}}
-    res = requests.post(url, headers=headers, json=payload).json()
-
-    print("Notion API 回傳：", res)
-    print("找到筆數：", len(res.get("results", [])))
-
-    return res.get("results", [])
+    
+    try:
+        res = requests.post(url, headers=headers, json=payload, timeout=30).json()
+        print("Notion API 回傳：", res)
+        print("找到筆數：", len(res.get("results", [])))
+        return res.get("results", [])
+    except Exception as e:
+        print("Notion API 呼叫失敗：", str(e))
+        return []
 
 def update_status(page_id, status="已發"):
     url = f"https://api.notion.com/v1/pages/{page_id}"
