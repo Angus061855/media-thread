@@ -21,13 +21,14 @@ def send_telegram(message):
     chat_id = os.environ["TELEGRAM_CHAT_ID"]
     requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
-        data={"chat_id": chat_id, "text": message}
+        data={"chat_id": chat_id, "text": message},
+        timeout=30
     )
 
 # ── 撈全部，印出每筆的狀態名稱，再手動篩選「待發」 ──────
 def get_pending_posts():
     url = f"https://api.notion.com/v1/databases/{NOTION_POST_DB_ID}/query"
-    res = requests.post(url, headers=NOTION_HEADERS, json={}).json()
+    res = requests.post(url, headers=NOTION_HEADERS, json={}, timeout=30).json()
 
     results = res.get("results", [])
     print(f"資料庫總筆數：{len(results)}")
@@ -63,7 +64,7 @@ def get_content_from_blocks(page_id):
         "Authorization": f"Bearer {NOTION_TOKEN_2}",
         "Notion-Version": "2022-06-28",
     }
-    res = requests.get(url, headers=headers).json()
+    res = requests.get(url, headers=headers, timeout=30).json()
 
     texts = []
     for block in res.get("results", []):
@@ -83,7 +84,8 @@ def update_status(page_id, status="已發"):
     requests.patch(
         url,
         headers=NOTION_HEADERS,
-        json={"properties": {"狀態": {"status": {"name": status}}}}
+        json={"properties": {"狀態": {"status": {"name": status}}}},
+        timeout=30
     )
 
 # ── 發文到 Threads ─────────────────────────────────────
@@ -105,7 +107,7 @@ def post_to_threads(content):
         if last_published_id:
             data["reply_to_id"] = last_published_id
 
-        res = requests.post(create_url, data=data).json()
+        res = requests.post(create_url, data=data, timeout=30).json()
         creation_id = res.get("id")
         if not creation_id:
             raise Exception(f"建立 container 失敗（第 {i+1} 則）：{res}")
@@ -113,7 +115,8 @@ def post_to_threads(content):
 
         pub_res = requests.post(
             f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads_publish",
-            data={"creation_id": creation_id, "access_token": THREADS_TOKEN}
+            data={"creation_id": creation_id, "access_token": THREADS_TOKEN},
+            timeout=30
         ).json()
         last_published_id = pub_res.get("id", "")
         print(f"第 {i+1} 則結果：", pub_res)
