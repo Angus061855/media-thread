@@ -49,41 +49,11 @@ def get_pending_posts():
     print(f"篩選後待發筆數：{len(results)}")
     return results
 
-# ── 讀取內容：rich_text 欄位讀不完就補讀頁面 blocks ───
+# ── 讀取內容：直接讀 rich_text 欄位 ───────────────────
 def get_content_from_property(page):
     rich_text = page["properties"].get("內容", {}).get("rich_text", [])
     content = "".join([t["plain_text"] for t in rich_text])
-
-    if content.strip():
-        print(f"✅ 從 rich_text 欄位讀到內容，長度：{len(content)}")
-        # rich_text 有 2000 字元上限，接近上限就補讀 blocks
-        if len(content) >= 1900:
-            print("⚠️  內容接近 2000 字元上限，改讀頁面 body blocks 確保完整...")
-            return get_content_from_blocks(page["id"])
-        return content
-
-    print("⚠️  rich_text 欄位為空，改讀頁面 body blocks...")
-    return get_content_from_blocks(page["id"])
-
-# ── 讀取頁面 body blocks ───────────────────────────────
-def get_content_from_blocks(page_id):
-    url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-    headers = {
-        "Authorization": f"Bearer {NOTION_TOKEN_2}",
-        "Notion-Version": "2022-06-28",
-    }
-    res = requests.get(url, headers=headers, timeout=30).json()
-
-    texts = []
-    for block in res.get("results", []):
-        block_type = block.get("type")
-        rich_text = block.get(block_type, {}).get("rich_text", [])
-        line = "".join([t["plain_text"] for t in rich_text])
-        if line:
-            texts.append(line)
-
-    content = "\n".join(texts)
-    print(f"✅ 從 blocks 讀到內容，長度：{len(content)}")
+    print(f"✅ 讀到內容，長度：{len(content)}")
     return content
 
 # ── 更新 Notion 狀態 ───────────────────────────────────
@@ -161,20 +131,26 @@ if __name__ == "__main__":
         print("沒有待發內容，結束。")
         exit(0)
 
-    page = posts[0]
-    page_id = page["id"]
+    # 找第一筆有內容的
+    target_page = None
+    target_content = ""
+    for page in posts:
+        content = get_content_from_property(page)
+        if content.strip():
+            target_page = page
+            target_content = content
+            break
 
-    content = get_content_from_property(page)
-    print(f"讀到的內容預覽：{repr(content[:200])}")
-
-    if not content.strip():
-        print("內容為空，結束。")
-        update_status(page_id, "已發")
+    if not target_page:
+        print("所有待發筆內容都是空的，結束。")
         exit(0)
+
+    page_id = target_page["id"]
+    print(f"讀到的內容預覽：{repr(target_content[:200])}")
 
     try:
         print("📄 找到待發內容，開始發文...")
-        post_to_threads(content)
+        post_to_threads(target_content)
         update_status(page_id, "已發")
         print("✅ 完成！")
         send_telegram("✅ media 給文章 發文成功！")
