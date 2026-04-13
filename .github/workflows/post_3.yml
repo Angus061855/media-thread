@@ -15,13 +15,16 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache pip          # ← 加這段
+      - name: Cache pip
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-post3
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Run post_3
         env:
@@ -32,6 +35,4 @@ jobs:
           NOTION_DATABASE_ID_3: ${{ secrets.NOTION_DATABASE_ID_3 }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          pip install requests
-          python post_3.py
+        run: python post_3.py
