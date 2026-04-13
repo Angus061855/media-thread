@@ -25,25 +25,22 @@ def send_telegram(message):
         timeout=30
     )
 
-# ── 撈全部，印出每筆的狀態名稱，再手動篩選「待發」 ──────
+# ── 撈待發，依「排序」欄位排序，取第一筆 ──────────────
 def get_pending_posts():
     url = f"https://api.notion.com/v1/databases/{NOTION_POST_DB_ID}/query"
-    res = requests.post(url, headers=NOTION_HEADERS, json={}, timeout=30).json()
-
+    payload = {
+        "filter": {
+            "property": "狀態",
+            "status": {"equals": "待發"}
+        },
+        "sorts": [
+            {"property": "排序", "direction": "ascending"}
+        ]
+    }
+    res = requests.post(url, headers=NOTION_HEADERS, json=payload, timeout=30).json()
     results = res.get("results", [])
-    print(f"資料庫總筆數：{len(results)}")
-
-    for i, page in enumerate(results):
-        status_prop = page["properties"].get("狀態", {})
-        status_name = status_prop.get("status", {}).get("name", "（無狀態）")
-        print(f"  第{i+1}筆 狀態原始值：'{status_name}'")
-
-    pending = [
-        p for p in results
-        if p["properties"].get("狀態", {}).get("status", {}).get("name") == "待發"
-    ]
-    print(f"篩選後待發筆數：{len(pending)}")
-    return pending
+    print(f"篩選後待發筆數：{len(results)}")
+    return results
 
 # ── 讀取內容：先試 rich_text 欄位，空的話改讀頁面 body ──
 def get_content_from_property(page):
@@ -88,6 +85,14 @@ def update_status(page_id, status="已發"):
         timeout=30
     )
 
+# ── 安全截斷：不超過 500 bytes，不切斷中文字 ──────────
+def safe_truncate(text, max_bytes=500):
+    encoded = text.encode('utf-8')
+    if len(encoded) <= max_bytes:
+        return text
+    truncated = encoded[:max_bytes]
+    return truncated.decode('utf-8', errors='ignore')
+
 # ── 發文到 Threads ─────────────────────────────────────
 def post_to_threads(content):
     posts = re.split(r'§\d+', content)
@@ -98,9 +103,7 @@ def post_to_threads(content):
 
     for i, text in enumerate(posts):
         text = text.replace("\\n", "\n")
-        encoded = text.encode('utf-8')
-        if len(encoded) > 500:
-            text = encoded[:500].decode('utf-8', errors='ignore')
+        text = safe_truncate(text, 500)
 
         print(f"🚀 建立第 {i+1} 則 container...")
         create_url = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads"
@@ -112,16 +115,31 @@ def post_to_threads(content):
         creation_id = res.get("id")
         if not creation_id:
             raise Exception(f"建立 container 失敗（第 {i+1} 則）：{res}")
-        time.sleep(5)
+        time.sleep(8)
 
-        pub_res = requests.post(
-            f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads_publish",
-            data={"creation_id": creation_id, "access_token": THREADS_TOKEN},
-            timeout=30
-        ).json()
+        pub_res = None
+        for attempt in range(3):
+            print(f"📤 發布第 {i+1} 則（第 {attempt+1} 次嘗試）...")
+            pub_res = requests.post(
+                f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads_publish",
+                data={"creation_id": creation_id, "access_token": THREADS_TOKEN},
+                timeout=30
+            ).json()
+
+            if pub_res.get("id"):
+                break
+            elif pub_res.get("error", {}).get("is_transient"):
+                print(f"暫時性錯誤，等待 15 秒後重試...")
+                time.sleep(15)
+            else:
+                raise Exception(f"發布失敗（第 {i+1} 則）：{pub_res}")
+
+        if not pub_res or not pub_res.get("id"):
+            raise Exception(f"發布失敗超過重試次數（第 {i+1} 則）：{pub_res}")
+
         last_published_id = pub_res.get("id", "")
         print(f"第 {i+1} 則結果：", pub_res)
-        time.sleep(3)
+        time.sleep(5)
 
 # ── 主程式 ─────────────────────────────────────────────
 if __name__ == "__main__":
