@@ -232,7 +232,7 @@ def post_to_threads(post_text):
 
     posts = re.split(r'§\d+', content)
     posts = [p.strip() for p in posts if p.strip()]
-    first_published_id = ""
+    last_published_id = ""
 
     for i, text in enumerate(posts):
         text = text.replace("\\n", "\n")
@@ -243,13 +243,37 @@ def post_to_threads(post_text):
         print(f"🚀 建立第 {i+1} 則 container...")
         create_url = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads"
         data = {"media_type": "TEXT", "text": text, "access_token": THREADS_TOKEN}
-        if first_published_id:
-            data["reply_to_id"] = first_published_id
+        if last_published_id:
+            data["reply_to_id"] = last_published_id
 
         res = requests.post(create_url, data=data, timeout=30).json()
         creation_id = res.get("id")
         if not creation_id:
             raise Exception(f"建立 container 失敗（第 {i+1} 則）：{res}")
+        time.sleep(8)
+
+        pub_res = None
+        for attempt in range(3):
+            print(f"📤 發布第 {i+1} 則（第 {attempt+1} 次嘗試）...")
+            pub_res = requests.post(
+                f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads_publish",
+                data={"creation_id": creation_id, "access_token": THREADS_TOKEN},
+                timeout=30
+            ).json()
+
+            if pub_res.get("id"):
+                break
+            elif pub_res.get("error", {}).get("is_transient"):
+                print(f"暫時性錯誤，等待 15 秒後重試...")
+                time.sleep(15)
+            else:
+                raise Exception(f"發布失敗（第 {i+1} 則）：{pub_res}")
+
+        if not pub_res or not pub_res.get("id"):
+            raise Exception(f"發布失敗超過重試次數（第 {i+1} 則）：{pub_res}")
+
+        last_published_id = pub_res.get("id", "")
+        print(f"第 {i+1} 則結果：", pub_res)
         time.sleep(5)
 
         print(f"📤 發布第 {i+1} 則...")
