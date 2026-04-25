@@ -26,6 +26,34 @@ def send_telegram(message):
         timeout=30
     )
 
+# ── 清除 AI 雜訊 ──────────────────────────────────────
+def clean_text(text):
+    # 移除 --- 分隔線
+    text = re.sub(r'\n?-{2,}\n?', '\n', text)
+    # 移除 *** 分隔線
+    text = re.sub(r'\n?\*{2,}\n?', '\n', text)
+    # 移除粗體標記 **文字**
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+    # 移除斜體標記 *文字*
+    text = re.sub(r'\*(.+?)\*', r'\1', text)
+    # 移除引用符號 >
+    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
+    # 超過兩個連續空行，壓縮成一個空行
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
+
+# ── 安全截斷：不超過 480 字元，在標點處切斷 ──────────
+def truncate_to_chars(text, max_chars=480):
+    if len(text) <= max_chars:
+        return text
+    truncated = text[:max_chars]
+    # 嘗試在標點符號處截斷
+    for punct in ['。', '！', '？', '\n']:
+        idx = truncated.rfind(punct)
+        if idx > max_chars * 0.7:
+            return truncated[:idx+1]
+    return truncated
+
 # ── 撈所有待發 ────────────────────────────────────────
 def get_pending_posts():
     url = f"https://api.notion.com/v1/databases/{NOTION_POST_DB_ID}/query"
@@ -64,25 +92,26 @@ def update_status(page_id, status="已發"):
         timeout=30
     )
 
-# ── 安全截斷：不超過 500 bytes，不切斷中文字 ──────────
-def safe_truncate(text, max_bytes=500):
-    encoded = text.encode('utf-8')
-    if len(encoded) <= max_bytes:
-        return text
-    truncated = encoded[:max_bytes]
-    return truncated.decode('utf-8', errors='ignore')
-
 # ── 發文到 Threads ─────────────────────────────────────
 def post_to_threads(content):
-    posts = re.split(r'§\d+', content)
+    # 先清除雜訊
+    content = clean_text(content)
+
+    # 切割段落，支援 §1 §2 或 § 1 § 2 等格式
+    posts = re.split(r'\s*§\s*\d+\s*', content)
     posts = [p.strip() for p in posts if p.strip()]
-    last_published_id = ""
 
     print(f"📝 共分成 {len(posts)} 則發文")
 
+    # 切割失敗保護：少於 2 則直接報錯，不發文
+    if len(posts) < 2:
+        raise Exception(f"段落切割失敗，只切出 {len(posts)} 則，內容預覽：{repr(content[:200])}")
+
+    last_published_id = ""
+
     for i, text in enumerate(posts):
         text = text.replace("\\n", "\n")
-        text = safe_truncate(text, 500)
+        text = truncate_to_chars(text, 480)
 
         print(f"🚀 建立第 {i+1} 則 container...")
         create_url = f"https://graph.threads.net/v1.0/{THREADS_USER_ID}/threads"
@@ -118,7 +147,11 @@ def post_to_threads(content):
 
         last_published_id = pub_res.get("id", "")
         print(f"第 {i+1} 則結果：", pub_res)
-        time.sleep(5)
+
+        # 隨機等待 10-20 秒，模擬真人操作
+        wait = random.randint(10, 20)
+        print(f"⏳ 等待 {wait} 秒後發下一則...")
+        time.sleep(wait)
 
 # ── 主程式 ─────────────────────────────────────────────
 if __name__ == "__main__":
