@@ -275,6 +275,23 @@ def generate_post(custom_topic):
             else:
                 raise
 
+def add_line_spacing(text):
+    """
+    每句話結尾（句號、！、？）後面自動加空行，
+    逗號結尾的連續句子保持在一起不拆開。
+    """
+    lines = text.split('\n')
+    result = []
+    for i, line in enumerate(lines):
+        result.append(line)
+        if i < len(lines) - 1:
+            current_ends_with_punct = line and line[-1] in '。！？'
+            next_line = lines[i + 1]
+            next_is_empty = next_line.strip() == ''
+            if current_ends_with_punct and not next_is_empty:
+                result.append('')
+    return '\n'.join(result)
+
 def post_to_threads(post_text):
     post_text = post_text.strip()
 
@@ -304,6 +321,7 @@ def post_to_threads(post_text):
     for i, text in enumerate(posts):
         text = clean_text(text)
         text = text.replace("\\n", "\n")
+        text = add_line_spacing(text)
         text = truncate_to_chars(text, max_chars=480)
 
         if not text:
